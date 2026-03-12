@@ -1,0 +1,87 @@
+@startuml
+title Event Storming
+
+skinparam defaultTextAlignment center
+skinparam rectangle {
+  BackgroundColor #FEFECE
+  BorderColor #A80036
+  FontStyle bold
+  FontSize 12
+}
+skinparam package {
+  BackgroundColor #F0F0F0
+  BorderColor #6F6F6F
+  FontStyle bold
+  FontSize 14
+}
+skinparam arrow {
+  Color #000000
+  FontSize 10
+}
+skinparam legend {
+  BackgroundColor #FFFFFF
+  BorderColor #000000
+}
+
+package "Customer Context"  {
+  rectangle "CustomerRegistered" as custReg
+  rectangle "CustomerUpdated" as custUpd
+}
+
+package "Fintech Context" {
+  rectangle "AccountOpened" as accOpen
+  rectangle "LoanApplicationSubmitted" as loanSub
+  rectangle "LoanApproved" as loanAppr
+  rectangle "LoanDisbursed" as loanDisb
+  rectangle "TransactionPosted" as txPost
+}
+
+package "Medical Context" {
+  rectangle "PatientCreated" as patCreate
+  rectangle "AppointmentScheduled" as apptSched
+  rectangle "AppointmentCompleted" as apptComp
+  rectangle "DiagnosisRecorded" as diag
+  rectangle "ImagingStudyRequested" as studyReq
+  rectangle "ImagingStudyCompleted" as studyComp
+  rectangle "PrescriptionIssued" as rx
+}
+
+package "AI Diagnostics Context" {
+  rectangle "AIAnalysisRequested" as aiReq
+  rectangle "AIAnalysisCompleted" as aiComp
+}
+
+package "Inventory Context"  {
+  rectangle "InventoryItemUsed" as invUsed
+  rectangle "InventoryLow" as invLow
+}
+
+package "Staff Context" {
+  rectangle "StaffAssigned" as staffAssign
+}
+
+package "Billing Context"  {
+  rectangle "InvoiceCreated" as invCreate
+  rectangle "PaymentReceived" as payRecv
+}
+
+custReg -down-> patCreate : "создаёт пациента"
+custReg -right-> accOpen : "открывает счёт"
+custUpd -down-> patCreate : "может обновить данные пациента"
+
+apptComp -right-> invCreate : "формирует счёт"
+studyReq -right-> aiReq : "запрашивает анализ"
+aiComp -down-> studyComp : "завершает исследование"
+diag -down-> loanAppr : "может влиять на одобрение кредита"
+rx -down-> invUsed : "списывает материалы"
+invLow -right-> invUsed : "инициирует закупку"
+apptSched -down-> staffAssign : "назначает сотрудника"
+loanAppr -down-> invCreate : "создаёт счёт на выплату кредита"
+payRecv -down-> txPost : "фиксирует транзакцию"
+
+legend right
+  Каждый прямоугольник – доменное событие.
+  Стрелки показывают, какое событие вызывает (триггерит) другое.
+endlegend
+
+@enduml

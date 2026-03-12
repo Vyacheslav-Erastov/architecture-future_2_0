@@ -1,0 +1,55 @@
+@startuml
+title Bounded Contexts
+
+package "Customer Context" <<bounded-context>> {
+  rectangle "Customer aggregate" as custAgg
+  note right: Управление профилями клиентов\n(регистрация, обновление данных)
+}
+
+package "Medical Context" <<bounded-context>> {
+  rectangle "Patient, Appointment,\nDiagnosis, ImagingStudy" as medAgg
+  note right: Ведение пациентов,\nмедицинские записи,\nприёмы, назначения
+}
+
+package "AI Diagnostics Context" <<bounded-context>> {
+  rectangle "AIAnalysis" as aiAgg
+  note right: Анализ исследований\nс помощью ИИ-моделей
+}
+
+package "Fintech Context" <<bounded-context>> {
+  rectangle "Account, Loan,\nTransaction" as finAgg
+  note right: Счета, кредиты,\nплатежи, транзакции
+}
+
+package "Inventory Context" <<bounded-context>> {
+  rectangle "InventoryItem" as invAgg
+  note right: Учёт оборудования\nи расходных материалов
+}
+
+package "Staff Context" <<bounded-context>> {
+  rectangle "StaffMember" as staffAgg
+  note right: Управление персоналом\n(врачи, операторы)
+}
+
+package "Billing Context" <<bounded-context>> {
+  rectangle "Invoice" as billAgg
+  note right: Выставление счетов\nза медицинские услуги
+}
+
+custAgg --> medAgg : "CustomerRegistered → PatientCreated"
+custAgg --> finAgg : "CustomerRegistered → AccountOpened"
+medAgg --> aiAgg : "ImagingStudyRequested → AIAnalysisRequested"
+aiAgg --> medAgg : "AIAnalysisCompleted → ImagingStudyCompleted"
+medAgg --> invAgg : "PrescriptionIssued → InventoryItemUsed"
+medAgg --> billAgg : "AppointmentCompleted → InvoiceCreated"
+medAgg --> staffAgg : "AppointmentScheduled → StaffAssigned"
+finAgg --> billAgg : "LoanApproved → InvoiceCreated (выплата)"
+billAgg --> finAgg : "PaymentReceived → TransactionPosted"
+
+legend right
+Каждый bounded context владеет своими данными
+и публикует события. Стрелки показывают
+основные потоки событий между контекстами.
+endlegend
+
+@enduml
