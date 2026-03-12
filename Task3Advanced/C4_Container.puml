@@ -1,0 +1,62 @@
+@startuml
+!include <C4/C4_Container>
+!include <C4/C4_Component>
+
+
+title Container diagram for Future 2.0 (Data Mesh)
+
+Person(employee, "Сотрудник", "Пользуется порталом самообслуживания")
+
+System_Boundary(future, "Будущее 2.0") {
+    Container(portal, "Портал самообслуживания", "React + Java/Go", "Интерфейс для конструирования отчётов и поиска данных")
+    Container(api_gateway, "API Gateway", "Kong", "Маршрутизация, аутентификация, rate limiting")
+
+    Container(event_platform, "Событийная платформа", "Apache Kafka", "Брокер событий, Schema Registry, DLQ")
+
+    Boundary(domains, "Домены (Data Products)") {
+        Container(domain_service, "Доменные сервисы", "Java/Go/Python", "Микросервисы, реализующие бизнес-логику")
+        ContainerDb(domain_db, "Операционные БД доменов", "PostgreSQL / MongoDB", "Источники данных")
+        Container(domain_data_product, "Дата-продукты домена", "Iceberg tables / APIs", "Опубликованные данные для аналитики")
+    }
+
+    Container(data_catalog, "Каталог данных", "DataHub", "Метаданные, владельцы, качество, lineage")
+    Container(data_lakehouse, "Data Lakehouse", "S3 + Iceberg + Nessie", "Централизованное хранилище с версионированием")
+    Container(query_engine, "Универсальный движок запросов", "Trino / Dremio", "Выполнение SQL-запросов к данным")
+
+    Container(iam, "IAM", "Keycloak", "Управление доступом")
+    Container(airflow, "Orchestrator", "Apache Airflow", "Оркестрация ETL и подготовки витрин")
+    Container(ac, "Антикоррупционный слой", "Kafka Connect / Camel", "Интеграция с легаси")
+    Container(bi_tools, "BI-инструменты", "Power BI / Tableau / Superset", "Визуализация и ad-hoc аналитика")
+}
+
+System_Ext(legacy_dwh, "Legacy DWH", "SQL Server 2008")
+System_Ext(legacy_esb, "Legacy ESB", "Apache Camel")
+
+Rel(domain_service, domain_db, "Читает/пишет", "SQL/протокол")
+Rel(domain_service, event_platform, "Публикует события", "Kafka")
+Rel(event_platform, domain_data_product, "Обновляет дата-продукты", "Kafka Connect / Flink")
+Rel(domain_data_product, data_lakehouse, "Хранится как Iceberg-таблицы", "S3 API")
+
+Rel(domain_data_product, data_catalog, "Регистрируется", "OpenAPI / REST")
+Rel(data_catalog, query_engine, "Предоставляет метаданные", "REST")
+
+Rel(bi_tools, query_engine, "Выполняет SQL-запросы", "JDBC")
+Rel(bi_tools, data_catalog, "Ищет данные", "REST")
+
+Rel(employee, portal, "Использует портал самообслуживания", "HTTPS")
+
+Rel(portal, api_gateway, "Все запросы", "HTTP")
+
+Rel(api_gateway, query_engine, "Прокси SQL-запросы", "HTTP/REST")
+Rel(api_gateway, data_catalog, "Прокси запросы каталога", "HTTP/REST")
+Rel(api_gateway, bi_tools, "Прокси запросы к BI (опционально)", "HTTP/API")
+
+Rel(api_gateway, iam, "Проверка токенов", "OIDC")
+
+Rel(query_engine, data_lakehouse, "Читает Iceberg-таблицы", "S3 + Iceberg")
+Rel(airflow, query_engine, "Запускает DAG", "SQL/API")
+Rel(ac, legacy_dwh, "Читает", "JDBC")
+Rel(ac, legacy_esb, "Подключается", "JMS")
+Rel(ac, event_platform, "Публикует события", "Kafka")
+
+@enduml
